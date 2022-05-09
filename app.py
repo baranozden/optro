@@ -16,6 +16,7 @@ LAYOUT_DATA = pd.DataFrame()
 assetpath = sys.path[0] + "\\assets"
 
 app = Dash(__name__, suppress_callback_exceptions=True, assets_folder=assetpath)
+server = app.server
 
 
 app.layout = html.Div([
