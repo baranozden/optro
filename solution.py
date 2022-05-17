@@ -43,25 +43,54 @@ def solve_models(val, df, lo):
     sta_layout_dict = md.build_station_layout_items_dict(wstasks, df)
     item_objects_created = md.build_layout_objects(sta_layout_dict, lo)
     md.optimize_layout(area_object_created, item_objects_created, sta_layout_dict)
-    image, item_names= md.render_layout(area_object_created, sta_layout_dict, item_objects_created)
+    image, item_names = md.render_layout(area_object_created, sta_layout_dict, item_objects_created, sol1)
     img = px.imshow(image)
     img.update_layout(width=800, height=600, margin=dict(l=10, r=10, b=10, t=10))
     img.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
-    item_names_list = [html.Div([html.Ul(children=[html.Li(str(key)+": "+str(item_names[key]["name"]),
-                                                           style={"color":"rgb"+str(item_names[key]["rgb"])})
-                                                   for key in item_names.keys()])])]
+
+    item_ul_dict = {sta: {item: [html.Div([html.Ul([html.Li(task)], className="task-ul")])
+                                 for task in item_names[sta]["items"][item]["item_task"]]
+                          for item in item_names[sta]["items"].keys()} for sta in item_names.keys()}
+
+    item_names_dict = {sta: [html.Div([html.Details([html.Summary(str(item_names[sta]["items"][item]["item_no"])+
+                                                                  ": "+str(item), className="item-summ"),
+                                                     html.Div(children=item_ul_dict[sta][item])])])
+                             for item in item_names[sta]["items"].keys()]
+                       for sta in item_names.keys()}
+
+    item_names_list = [html.Div([html.Details([html.Summary("Station #"+str(list(item_names.keys()).index(sta)+1),
+                                                            style={"background-color":
+                                                                       "rgb"+str(item_names[sta]["color"])},
+                                                            className="sta-summ"),
+                                              html.Div(children=item_names_dict[sta])])])
+                       for sta in item_names.keys()]
 
     wstasks2 = md.build_ws_task_dict(sol2)
     sta_layout_dict2 = md.build_station_layout_items_dict(wstasks2, df)
     item_objects_created2 = md.build_layout_objects(sta_layout_dict2, lo)
     md.optimize_layout(area_object_created, item_objects_created2, sta_layout_dict2)
-    image2, item_names2 = md.render_layout(area_object_created, sta_layout_dict2, item_objects_created2)
+    image2, item_names2 = md.render_layout(area_object_created, sta_layout_dict2, item_objects_created2, sol2)
     img2 = px.imshow(image2)
     img2.update_layout(width=800, height=600, margin=dict(l=10, r=10, b=0, t=0))
     img2.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
-    item_names_list2 = [html.Div([html.Ul(children=[html.Li(str(key) + ": " + str(item_names2[key]["name"]),
-                                                           style={"color": "rgb" + str(item_names2[key]["rgb"])})
-                                                   for key in item_names2.keys()])])]
+
+    item_ul_dict2 = {sta: {item: [html.Div([html.Ul([html.Li(task)], className="task-ul")])
+                                 for task in item_names2[sta]["items"][item]["item_task"]]
+                          for item in item_names2[sta]["items"].keys()} for sta in item_names2.keys()}
+
+    item_names_dict2 = {sta: [html.Div([html.Details([html.Summary(str(item_names2[sta]["items"][item]["item_no"]) +
+                                                                  ": " + str(item), className="item-summ"),
+                                                     html.Div(children=item_ul_dict2[sta][item])])])
+                             for item in item_names2[sta]["items"].keys()]
+                       for sta in item_names2.keys()}
+
+    item_names_list2 = [html.Div([html.Details([html.Summary("Station #" + str(list(item_names2.keys()).index(sta)+1),
+                                                            style={"background-color":
+                                                                       "rgb" + str(item_names2[sta]["color"])},
+                                                            className="sta-summ"),
+                                               html.Div(children=item_names_dict2[sta])])])
+                       for sta in item_names2.keys()]
+
 
     return html.Div([
         html.H2(["Model 1 KPIs"], className="ribbon-banner"),

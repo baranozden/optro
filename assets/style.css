@@ -185,3 +185,29 @@ Input {
     margin-bottom: 0px;
 }
 
+Details {
+    border: 1px solid gray;
+    background-color: #eeeeee;
+}
+
+Summary {
+    cursor: pointer;
+    font-weight: bold;
+    padding: 10px;
+}
+
+.sta-summ {
+    font-size: 22px;
+
+}
+
+.item-summ {
+    font-size: 17px;
+    margin-left: 900px;
+
+}
+
+.task-ul {
+    font-size: 15px;
+    margin-left: 920px;
+}

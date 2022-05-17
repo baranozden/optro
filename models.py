@@ -94,10 +94,11 @@ def optimizer(target, typ, df):
                 sl.append(k)
                 ttl.append(task_time[j])
 
-    assignments = pd.DataFrame({'task_id': tl, 'sta': sl, 'task_time': ttl, 'no_worker': np.nan})
+    assignments = pd.DataFrame({'task_id': tl, 'sta': sl, 'task_time': ttl, 'no_worker': np.nan, 'place': np.nan})
     for i in range(len(assignments)):
         assignments.task_id[i] = task_dict[assignments.task_id[i]]
         assignments.no_worker[i] = df[df.task_name == assignments.task_id[i]].no_workers
+        assignments.place[i] = df[df.task_name == assignments.task_id[i]].place.values[0]
 
     return assignments
 
@@ -165,10 +166,11 @@ def optimizedev(target, typ, df):
                 sl.append(k)
                 ttl.append(task_time[j])
 
-    assignments = pd.DataFrame({'task_id': tl, 'sta': sl, 'task_time': ttl, 'no_worker': np.nan})
+    assignments = pd.DataFrame({'task_id': tl, 'sta': sl, 'task_time': ttl, 'no_worker': np.nan, 'place': np.nan})
     for i in range(len(assignments)):
         assignments.task_id[i] = task_dict[assignments.task_id[i]]
         assignments.no_worker[i] = df[df.task_name == assignments.task_id[i]].no_workers
+        assignments.place[i] = df[df.task_name == assignments.task_id[i]].place.values[0]
 
     return assignments
 
@@ -377,19 +379,34 @@ def optimize_layout(area_object, item_objects, sta_layout_item_dict):
                                dummy_rotate[opt_var].varValue)
 
 
-def render_layout(area_object, sta_layout_items, item_objects):
-    area_img = Image.new('RGB', (area_object.x, area_object.y), (128, 128, 128))
+def render_layout(area_object, sta_layout_items, item_objects, base_df):
+    area_img = Image.new('RGB', (area_object.x, area_object.y), (43, 43, 43))
     draw = ImageDraw.Draw(area_img)
     sta_colors = {}
+    layout_info = {sta: {"color": np.nan, "items": {}} for sta in base_df.sta.unique()}
+
+    step_size = int(area_object.x/20)
+    for x in range(0, area_object.x, step_size):
+        line = ((x, 0), (x, area_object.y))
+        draw.line(line, fill=(175, 177, 179))
+
+    for y in range(0, area_object.y, step_size):
+        line = ((0, y), (area_object.x, y))
+        draw.line(line, fill=(175, 177, 179))
+
+    for item in item_objects:
+        idx = item_objects.index(item)
+        ws = item.ws
+        name = item.name
+        task_list = base_df.loc[(base_df["sta"] == ws) & (base_df["place"] == name)].task_id.unique()
+        layout_info[ws]["items"][name] = {"item_no": idx+1, "item_task": list(task_list)}
 
     for sta in sta_layout_items.keys():
         r = random.randint(0, 255)
         g = random.randint(0, 255)
         b = random.randint(0, 255)
         sta_colors[sta] = (r, g, b)
-
-    item_no = {f"{i + 1}": {"name": item_objects[i].name, "rgb": sta_colors[item_objects[i].ws]}
-               for i in range(len(item_objects))}
+        layout_info[sta]["color"] = (r, g, b)
 
     for item in item_objects:
         idx = item_objects.index(item)
@@ -400,7 +417,7 @@ def render_layout(area_object, sta_layout_items, item_objects):
         draw.rectangle((int(ulx), int(uly), int(lrx), int(lry)), fill=sta_colors[item.ws], outline=(0, 0, 0))
         draw.text((item.cx + area_object.x / 2 - 1, -item.cy + area_object.y / 2 - 1), str(idx+1))
 
-    return area_img, item_no
+    return area_img, layout_info
 
 
 def summarize_stations(data):
