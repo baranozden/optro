@@ -12,11 +12,11 @@ def create_dataframe(path=None, data=None):
     else:
         df = data.copy()
 
-    df.drop(['stds', 'mins', 'maxs'], inplace=True, axis=1)
+    df = df[["task_id", "task_name", "sums", "no_workers", "precedence", "place"]]
+    # df.drop(['stds', 'mins', 'maxs'], inplace=True, axis=1)
     df.task_id = df.task_id.astype(str)
     df.precedence = df.precedence.astype(str)
     for i in range(len(df)):
-
         if " " in df.precedence[i]:
             df.precedence[i] = df.precedence[i].split(", ")
         else:
@@ -29,7 +29,6 @@ def create_layout_df(path=None, data=None):
         lo = pd.read_excel(rf"{path}")
     else:
         lo = data.copy()
-
     return lo
 
 
@@ -124,11 +123,15 @@ def optimizedev(target, typ, df):
     # DECISION VARIABLES
     ws_open = LpVariable.dicts("OpenWS", stations, 0, 1, LpBinary)
     task_ws = LpVariable.dicts("TaskWSAssignments", [(j, k) for j in tasks for k in stations], 0, 1, LpBinary)
+    # new
+    tmax = LpVariable("Maximum Time", 0, None, LpContinuous)
+    diff = LpVariable.dicts("Difference", stations, 0, None, LpContinuous)
 
     # OBJECTIVE FUNCTION
-    # model += lpSum(ws_open[k] for k in ws_open)
-
-    model += lpSum(ct * ws_open[k] - lpSum(task_ws[(j, k)] * task_time[j] for j in tasks) for k in stations)
+    # new
+    model += lpSum(diff[k] for k in stations)
+    # original
+    #model += lpSum(ct * ws_open[k] - lpSum(task_ws[(j, k)] * task_time[j] for j in tasks) for k in stations)
 
     # CONSTRAINTS
 
@@ -146,13 +149,16 @@ def optimizedev(target, typ, df):
 
     # 4 Predecessors have to be assigned before
     for j in tasks:
-
         for k in stations:
-
             for l in tasks:
                 model += precedence[j][l] * task_ws[(j, k)] <= lpSum(
                     task_ws[(l, m)] for m in stations[:stations.index(k) + 1] if j != l)
 
+    for k in stations:
+        model += lpSum(task_ws[(j, k)] * task_time[j] for j in tasks) <= tmax
+
+    for k in stations:
+        model += tmax - lpSum(task_ws[(j, k)] * task_time[j] for j in tasks) - (1 - ws_open[k])*999999 <= diff[k]
     # SOLVE MODEL
     model.solve()
 
@@ -191,8 +197,9 @@ def build_station_layout_items_dict(ws_task_dict, data):
         item_set = []
         for task in sta_task_list:
             item_set.append(data.loc[(data.task_name == task)].place.values[0])
-        sta_item_dict[sta] = list(set(item_set))
+        sta_item_dict[sta] = list(set(item_set)) #+ ["storage unit"]
     sta_list = list(sta_item_dict.keys())
+    print("!!!!!!!!",sta_list)
     last = sta_list[-1]
     sta_item_dict[last] = sta_item_dict[last] + ["test"]
     return sta_item_dict
@@ -278,6 +285,7 @@ def optimize_layout(area_object, item_objects, sta_layout_item_dict):
     items_xlen = {str(item.name) + " - " + str(item.ws): item.x for item in item_objects}
     items_ylen = {str(item.name) + " - " + str(item.ws): item.y for item in item_objects}
     line_cells = [item for item in items if "box" in item]
+    # storage = [item for item in items if "storage unit" in item]
     M = 99999
     stas = list(sta_layout_items.keys())
     for key in sta_layout_items.keys():
@@ -293,8 +301,12 @@ def optimize_layout(area_object, item_objects, sta_layout_item_dict):
     dummy_ys = LpVariable.dicts("Dummy Y", (items, items), 0, 1, LpBinary)
     dummy_zs = LpVariable.dicts("Dummy Z", (items, items), 0, 1, LpBinary)
     dummy_rotate = LpVariable.dicts("Dummy Rotate pi/2", items, 0, 1, LpBinary)
-    connectx = LpVariable.dicts("Line Connection X", items, 0, 1, LpBinary)
-    connecty = LpVariable.dicts("Line Connection Y", items, 0, 1, LpBinary)
+    # dummy_storage_right = LpVariable.dicts("Dummy Storage Unit Right Side", storage, 0, 1, LpBinary)
+    # dummy_storage_left = LpVariable.dicts("Dummy Storage Unit Left Side", storage, 0, 1, LpBinary)
+    # dummy_storage_up = LpVariable.dicts("Dummy Storage Unit Upper Side", storage, 0, 1, LpBinary)
+    # dummy_storage_down = LpVariable.dicts("Dummy Storage Unit Lower Side", storage, 0, 1, LpBinary)
+    connectx = LpVariable.dicts("Line Connection X", line_cells, 0, 1, LpBinary)
+    connecty = LpVariable.dicts("Line Connection Y", line_cells, 0, 1, LpBinary)
     x_abs_difference = LpVariable.dicts("Manhattan Dist X", (items, items), 0)
     y_abs_difference = LpVariable.dicts("Manhattan Dist Y", (items, items), 0)
 
@@ -371,6 +383,23 @@ def optimize_layout(area_object, item_objects, sta_layout_item_dict):
                          centeroid_ys[rel] + ((1 - dummy_rotate[rel]) * items_ylen[rel] -
                                               2 * connecty[item] - dummy_rotate[rel] * items_xlen[rel]) / 2)
 
+    # for item in storage:
+    #     model += centeroid_xs[item] + (
+    #             (1 - dummy_rotate[item]) * items_xlen[item] / 2 + dummy_rotate[item] *
+    #             items_ylen[item] / 2) >= env.right_x * dummy_storage_right[item] - M * (1 - dummy_storage_right[item])
+    #     model += centeroid_xs[item] - (
+    #             (1 - dummy_rotate[item]) * items_xlen[item] / 2 + dummy_rotate[item] *
+    #             items_ylen[item] / 2) <= env.left_x * dummy_storage_left[item] + M * (1 - dummy_storage_left[item])
+    #     model += centeroid_ys[item] + (
+    #             (1 - dummy_rotate[item]) * items_ylen[item] / 2 + dummy_rotate[item] *
+    #             items_xlen[item] / 2) >= env.up_y * dummy_storage_up[item] - M * (1 - dummy_storage_up[item])
+    #     model += centeroid_ys[item] - (
+    #             (1 - dummy_rotate[item]) * items_ylen[item] / 2 + dummy_rotate[item] *
+    #             items_xlen[item] / 2) <= env.down_y * dummy_storage_down[item] + M * (1 - dummy_storage_down[item])
+    #
+    #     model += dummy_storage_up[item] + dummy_storage_down[item] + \
+    #              dummy_storage_right[item] + dummy_storage_left[item] >= 1
+
     model.solve()
 
     for item in item_objects:
@@ -415,7 +444,7 @@ def render_layout(area_object, sta_layout_items, item_objects, base_df):
         lrx = item.right_x + area_object.x / 2
         lry = -item.down_y + area_object.y / 2
         draw.rectangle((int(ulx), int(uly), int(lrx), int(lry)), fill=sta_colors[item.ws], outline=(0, 0, 0))
-        draw.text((item.cx + area_object.x / 2 - 1, -item.cy + area_object.y / 2 - 1), str(idx+1))
+        draw.text((item.cx + area_object.x / 2 - 3, -item.cy + area_object.y / 2 - 2), str(idx+1))
 
     return area_img, layout_info
 

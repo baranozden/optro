@@ -211,3 +211,16 @@ Summary {
     font-size: 15px;
     margin-left: 920px;
 }
+
+.guidelines H5 {
+    margin-left: 20px;
+    font-size: 14px;
+}
+
+.guidelines H2 {
+    margin-top: 50px;
+}
+
+.guidelines H3 {
+    margin-top: 30px;
+}
