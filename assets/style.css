@@ -152,6 +152,21 @@ Button:hover {
     color: yellow;
 }
 
+.delete-button {
+    background-color: #636efa !important;
+    border-radius: 5px !important;
+    height: 35px;
+    width: 100px;
+    color: white;
+    margin-left: 5px;
+    margin-bottom: 10px;
+}
+
+.delete-button:hover {
+    background-color: #af1618;
+    color: yellow;
+}
+
 Input {
     padding: 10px;
     margin-left: 20px;

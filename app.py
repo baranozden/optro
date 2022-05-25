@@ -1,10 +1,12 @@
 import pandas as pd
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 
 import io
 import base64
 import sys
+import time
+import threading
 
 import landing
 import data_page
@@ -13,6 +15,7 @@ import models as md
 
 DATA = pd.DataFrame()
 LAYOUT_DATA = pd.DataFrame()
+counter = 0
 assetpath = sys.path[0] + "\\assets"
 
 app = Dash(__name__, suppress_callback_exceptions=True)
@@ -31,7 +34,7 @@ app.layout = html.Div([
                      dcc.Tab(label="Data", value="data", className="nav-tab", selected_className="tab-sel"),
                      dcc.Tab(label="Modelling", value="modelling", className="nav-tab", selected_className="tab-sel"),
                  ])
-    ],className="navbar-container"),
+    ], className="navbar-container"),
     html.Div(id="body"),
 
 ])
@@ -77,26 +80,50 @@ def upload_task_data(contents):
         ], style={"color": "green"})
 
 
-# @app.callback(Output("upload-default-data-message", "children"),
-#               Input("default-data-upload", "n_clicks"))
-# def use_default_data(n_clicks):
-#     global DATA, LAYOUT_DATA
-#     if n_clicks > 0:
-#         DATA = md.create_dataframe("C:/Users/baran/OneDrive/Masaüstü/temsa/temsa_tasks.xlsx")
-#         LAYOUT_DATA = md.create_layout_df("C:/Users/baran/OneDrive/Masaüstü/temsa/layout.xlsx")
-#         return html.Div([
-#             html.P("Default data loaded successfully. You can go to Dashboards or Modelling pages!"),
-#         ], style={"color":"green"})
-
-
 @app.callback(Output("button-message", "children"),
               Input("solve-button", "n_clicks"),
               State("cycle-time", "value"))
 def prompt_solution(n_clicks, val):
     global DATA
     global LAYOUT_DATA
-    if n_clicks > 0:
-        return solution.solve_models(val, DATA, LAYOUT_DATA)
+
+    if n_clicks == 1:
+        t1 = threading.Thread(target=solution.solve_models, args=(val, DATA, LAYOUT_DATA))
+        t1.start()
+        return html.Div([dcc.Interval(id='interval-component',
+                                      interval=1000,
+                                      disabled=False),
+                         html.Div(id="calculation-message")])
+
+
+@app.callback(Output('calculation-message', 'children'),
+              [Input('interval-component', 'n_intervals')])
+def update_calculation_message(n):
+    if solution.solution_report:
+        return solution.solution_report
+    elif n:
+        if n % 3 == 1:
+            return html.P("Calculating..")
+        elif n % 3 == 2:
+            return html.P("Calculating...")
+        else:
+            return html.P("Calculating.")
+
+
+@app.callback(Output('interval-component', 'disabled'),
+              [Input('interval-component', 'disabled')])
+def stop_interval(disabled):
+    if solution.solution_report:
+        time.sleep(3)
+        return not disabled
+
+
+@app.callback(Output("navbar", "value"),
+              Input('clear-button', 'n_clicks'))
+def delete_solution(n):
+    if n > 0:
+        solution.clear_report()
+        return "modelling"
 
 
 if __name__ == '__main__':

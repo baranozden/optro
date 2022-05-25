@@ -4,7 +4,16 @@ import models as md
 import plotly.express as px
 
 
+solution_report = False
+
+
+def clear_report():
+    global solution_report
+    solution_report = False
+
+
 def solve_models(val, df, lo):
+    global solution_report
     sol1 = md.optimizer(val, "ct", df)
     sol2 = md.optimizedev(val, "ct", df)
     sta_numbers, worker_numbers, task_assignments, task_time, sta_time, max_times, sta_idleness, sta_utilize, \
@@ -92,7 +101,7 @@ def solve_models(val, df, lo):
                        for sta in item_names2.keys()]
 
 
-    return html.Div([
+    solution_report = html.Div([
         html.H2(["Model 1 KPIs"], className="ribbon-banner"),
         html.Div([
             html.Div([
@@ -259,7 +268,7 @@ def solve_models(val, df, lo):
 
 
 def render_solution():
-    return html.Div([
+    return html.Div(id="model-control", children=[
         html.H3("Model Target", className="input-header"),
         dcc.Input(id="cycle-time",
                   type="number",
@@ -267,15 +276,10 @@ def render_solution():
         html.Button("Solve!",
                     id="solve-button",
                     n_clicks=0),
+        html.Button("Clear Solution",
+                    id="clear-button",
+                    n_clicks=0),
         html.Div(id="button-message"),
         html.Div(id="solution-page")
-        #TODO:input metric
-        #TODO:metric type
-        #TODO:utilization threshold
-
-        #TODO: model sonucu(cycle time, açılan istasyon sayısı, işçi sayısı)
-        #TODO: atama tablosu
-        #TODO: istasyon takt time grafik
-        #TODO: istasyon utilization rate grafik
     ])
 
