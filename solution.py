@@ -278,7 +278,8 @@ def render_solution():
                     n_clicks=0),
         html.Button("Clear Solution",
                     id="clear-button",
-                    n_clicks=0),
+                    n_clicks=0,
+                    className="delete-button"),
         html.Div(id="button-message"),
         html.Div(id="solution-page")
     ])

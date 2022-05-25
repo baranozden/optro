@@ -153,13 +153,13 @@ Button:hover {
 }
 
 .delete-button {
-    background-color: #636efa !important;
-    border-radius: 5px !important;
+    background-color: black !important;
     height: 35px;
     width: 100px;
     color: white;
+    border-radius: 15px;
     margin-left: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 40px;
 }
 
 .delete-button:hover {
