@@ -91,9 +91,10 @@ def prompt_solution(n_clicks, val):
         t1 = threading.Thread(target=solution.solve_models, args=(val, DATA, LAYOUT_DATA))
         t1.start()
         return html.Div(id="interval-container",
-                        children=[dcc.Interval(id='interval-component',
-                                               interval=1000,
-                                               disabled=False),
+                        children=[html.Div(id="interval-container2",
+                                           children=[dcc.Interval(id='interval-component',
+                                                                  interval=1000,
+                                                                  disabled=False)]),
                                   html.Div(id="calculation-message")])
 
 
@@ -111,7 +112,7 @@ def update_calculation_message(n):
             return html.P("Calculating.")
 
 
-@app.callback(Output('interval-component', 'max_intervals'),
+@app.callback(Output('interval-container2', 'children'),
               [Input('interval-component', 'disabled')])
 def stop_interval(n):
     print("####### didnt stop interval")
@@ -120,7 +121,7 @@ def stop_interval(n):
         if solution.solution_report:
             time.sleep(3)
             print("####### stop interval")
-            return 0
+            return html.Div()
 
 
 @app.callback(Output("navbar", "value"),
