@@ -15,7 +15,8 @@ import models as md
 
 DATA = pd.DataFrame()
 LAYOUT_DATA = pd.DataFrame()
-counter = 0
+N = 0
+SOLVED = False
 assetpath = sys.path[0] + "\\assets"
 
 app = Dash(__name__, suppress_callback_exceptions=True)
@@ -99,30 +100,35 @@ def prompt_solution(n_clicks, val):
 
 
 @app.callback(Output('calculation-message', 'children'),
-              [Input('interval-component', 'n_intervals'),
-               Input('retrieve-button', 'n_clicks')])
-def update_calculation_message(n1, n2):
-    if solution.solution_report:
+              [Input('interval-component', 'n_intervals')])
+def update_calculation_message(n1):
+    global N
+    global SOLVED
+    if SOLVED:
         return solution.solution_report
     elif n1:
-        if n % 3 == 1:
-            return html.P("Calculating..")
-        elif n % 3 == 2:
-            return html.P("Calculating...")
-        else:
-            return html.P("Calculating.")
-    elif n2:
-        return solution.solution_report
+        if n1 > N+2:
+            if n1 % 3 == 1:
+                return html.P("Calculating..")
+            elif n1 % 3 == 2:
+                return html.P("Calculating...")
+            else:
+                return html.P("Calculating.")
 
 
 @app.callback(Output('interval-component', 'interval'),
               [Input('interval-component', 'n_intervals')])
 def stop_interval(n):
     print("####### didnt stop interval")
-
-    if solution.solution_report:
+    global N
+    global SOLVED
+    if SOLVED:
         print("####### stop interval")
-        return 9999999999
+        return 99999999
+    elif solution.solution_report:
+        N = n
+        SOLVED = True
+        return 1000
     else:
         return 1000
 
@@ -130,8 +136,12 @@ def stop_interval(n):
 @app.callback(Output("navbar", "value"),
               Input('clear-button', 'n_clicks'))
 def delete_solution(n):
+    global N
+    global SOLVED
     if n > 0:
         solution.clear_report()
+        N = 0
+        SOLVED = False
         return "modelling"
 
 
