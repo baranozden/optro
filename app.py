@@ -117,9 +117,7 @@ def update_calculation_message(n):
 def stop_interval(n):
     print("####### didnt stop interval")
     while True:
-        time.sleep(5)
         if solution.solution_report:
-            time.sleep(3)
             print("####### stop interval")
             return 9999999999
 
