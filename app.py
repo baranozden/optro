@@ -116,12 +116,12 @@ def update_calculation_message(n):
               [Input('interval-component', 'n_intervals')])
 def stop_interval(n):
     print("####### didnt stop interval")
-    while True:
-        if solution.solution_report:
-            print("####### stop interval")
-            return 9999999999
-        else:
-            return 1000
+
+    if solution.solution_report:
+        print("####### stop interval")
+        return 9999999999
+    else:
+        return 1000
 
 
 @app.callback(Output("navbar", "value"),
