@@ -113,7 +113,7 @@ def update_calculation_message(n):
 
 
 @app.callback(Output('interval-component', 'interval'),
-              [Input('interval-component', 'disabled')])
+              [Input('interval-component', 'n_intervals')])
 def stop_interval(n):
     print("####### didnt stop interval")
     while True:
