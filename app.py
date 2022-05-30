@@ -119,6 +119,7 @@ def stop_interval(n):
     while True:
         if solution.solution_report:
             print("####### stop interval")
+            time.sleep(1)
             return 9999999999
         else:
             return 1000
