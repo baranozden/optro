@@ -117,12 +117,15 @@ def update_calculation_message(n1):
 
 
 @app.callback(Output('interval-component', 'interval'),
-              [Input('interval-component', 'n_intervals')])
-def stop_interval(n):
+              [Input('interval-component', 'n_intervals'),
+               Input('clear-button', 'n_clicks')])
+def stop_interval(n, click):
     print("####### didnt stop interval")
     global N
     global SOLVED
-    if SOLVED:
+    if click > 0:
+        return 1000
+    elif SOLVED:
         print("####### stop interval")
         return 99999999
     elif solution.solution_report:
