@@ -99,17 +99,20 @@ def prompt_solution(n_clicks, val):
 
 
 @app.callback(Output('calculation-message', 'children'),
-              [Input('interval-component', 'n_intervals')])
-def update_calculation_message(n):
+              [Input('interval-component', 'n_intervals'),
+               Input('retrieve-button', 'n_clicks')])
+def update_calculation_message(n1, n2):
     if solution.solution_report:
         return solution.solution_report
-    elif n:
+    elif n1:
         if n % 3 == 1:
             return html.P("Calculating..")
         elif n % 3 == 2:
             return html.P("Calculating...")
         else:
             return html.P("Calculating.")
+    elif n2:
+        return solution.solution_report
 
 
 @app.callback(Output('interval-component', 'interval'),
