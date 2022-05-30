@@ -112,7 +112,7 @@ def update_calculation_message(n):
             return html.P("Calculating.")
 
 
-@app.callback(Output('interval-container2', 'children'),
+@app.callback(Output('interval-component', 'interval'),
               [Input('interval-component', 'disabled')])
 def stop_interval(n):
     print("####### didnt stop interval")
@@ -121,7 +121,7 @@ def stop_interval(n):
         if solution.solution_report:
             time.sleep(3)
             print("####### stop interval")
-            return html.Div()
+            return 9999999999
 
 
 @app.callback(Output("navbar", "value"),
